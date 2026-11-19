@@ -636,6 +636,8 @@
       }
     });
   }, { rootMargin: '0px 0px -8% 0px' });
+  // блоки прячутся для анимации только когда скрипт точно работает
+  document.documentElement.classList.add('js');
   document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 
   /* ------------------------------------------------------------------

@@ -460,8 +460,8 @@ canvas, svg { display: block; }
 @keyframes pop { to { transform: translate(-50%, -260%); opacity: 0; } }
 
 /* ---------- появление ---------- */
-.reveal { opacity: 0; transform: translateY(24px); transition: opacity .5s, transform .5s; }
-.reveal.in { opacity: 1; transform: none; }
+.js .reveal { opacity: 0; transform: translateY(24px); transition: opacity .5s, transform .5s; }
+.js .reveal.in { opacity: 1; transform: none; }
 
 /* ---------- адаптив ---------- */
 @media (max-width: 1000px) {
@@ -504,7 +504,7 @@ canvas, svg { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .reveal { opacity: 1; transform: none; transition: none; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
   .cloud--drift, .cloud--step, .scroll-hint, .dot, .caret { animation: none; }
 }
 
