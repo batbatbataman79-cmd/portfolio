@@ -1,68 +1,123 @@
 (() => {
   'use strict';
 
-  const { PAL, SPRITES, ICONS } = window.PIXEL_SPRITES;
-  const SW = 20;           // ширина кадра персонажа
-  const SH = 32;           // высота кадра персонажа
+  const { W: SW, H: SH, build, ICONS, CLOUDS } = window.PIXEL_SPRITES;
+  const sprites = build();
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const OUT = '#1a1030';
 
   /* ------------------------------------------------------------------
-   * Спрайты → offscreen canvas
+   * Пиксельные иконки и облака (SVG)
    * ------------------------------------------------------------------ */
-  const sprites = {};
-  for (const [name, rows] of Object.entries(SPRITES)) {
-    if (rows.length !== SH || rows.some((r) => r.length !== SW)) {
-      console.warn('[sprites] неверный размер кадра', name, rows.map((r) => r.length));
-    }
-    const c = document.createElement('canvas');
-    c.width = SW; c.height = SH;
-    const g = c.getContext('2d');
+  function pixelSVG(rows, colors) {
+    let rects = '';
     rows.forEach((row, y) => {
       for (let x = 0; x < row.length; x++) {
         const ch = row[x];
         if (ch === '.') continue;
-        g.fillStyle = PAL[ch] || '#f0f';
-        g.fillRect(x, y, 1, 1);
+        const fill = colors ? ` fill="${colors[ch]}"` : '';
+        rects += `<rect x="${x}" y="${y}" width="1" height="1"${fill}/>`;
       }
     });
-    sprites[name] = c;
-  }
-
-  /* ------------------------------------------------------------------
-   * Пиксельные иконки
-   * ------------------------------------------------------------------ */
-  const iconSVG = (rows) => {
-    let rects = '';
-    rows.forEach((row, y) => {
-      for (let x = 0; x < row.length; x++) if (row[x] !== '.') rects += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
-    });
     return `<svg viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true">${rects}</svg>`;
-  };
+  }
   document.querySelectorAll('[data-icon]').forEach((el) => {
     const rows = ICONS[el.dataset.icon];
-    if (rows) el.innerHTML = iconSVG(rows);
+    if (rows) el.innerHTML = pixelSVG(rows);
   });
+
+  const CLOUD_COLORS = { X: '#5b4bc4', L: '#8f80f2', D: '#3a2d8f' };
+  document.querySelectorAll('[data-cloud]').forEach((el) => {
+    const rows = CLOUDS[+el.dataset.cloud] || CLOUDS[0];
+    const s = parseFloat(getComputedStyle(el).getPropertyValue('--s')) || 4;
+    el.style.width = rows[0].length * s + 'px';
+    el.style.height = rows.length * s + 'px';
+    el.innerHTML = pixelSVG(rows, CLOUD_COLORS);
+  });
+
+  /* ------------------------------------------------------------------
+   * Ночной пиксельный город
+   * ------------------------------------------------------------------ */
+  function drawSkyline(canvas) {
+    const P = 3;
+    const w = Math.ceil(canvas.clientWidth / P);
+    const h = Math.ceil(canvas.clientHeight / P);
+    if (!w || !h) return;
+    canvas.width = w;
+    canvas.height = h;
+    const g = canvas.getContext('2d');
+    let seed = parseInt(canvas.dataset.seed, 10) || 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const LIT = ['#ffcf5a', '#ffcf5a', '#ff7ad9', '#7ae8ff'];
+
+    // дальний план
+    for (let x = -2; x < w;) {
+      const bw = 7 + Math.floor(rnd() * 12);
+      const bh = Math.floor(h * 0.35 + rnd() * h * 0.5);
+      g.fillStyle = '#2a1f70';
+      g.fillRect(x, h - bh, bw, bh);
+      for (let wy = h - bh + 3; wy < h - 2; wy += 4) {
+        for (let wx = x + 2; wx < x + bw - 2; wx += 3) {
+          if (rnd() < 0.12) { g.fillStyle = '#4b3bb0'; g.fillRect(wx, wy, 1, 2); }
+        }
+      }
+      x += bw + (rnd() < 0.3 ? 2 : 0);
+    }
+    // ближний план
+    for (let x = -4; x < w;) {
+      const bw = 10 + Math.floor(rnd() * 16);
+      const bh = Math.floor(h * 0.18 + rnd() * h * 0.42);
+      const top = h - bh;
+      g.fillStyle = '#1b1452';
+      g.fillRect(x, top, bw, bh);
+      g.fillStyle = '#4a3bb5';
+      g.fillRect(x, top, bw, 1);
+      if (rnd() < 0.35) {
+        const ax = x + Math.floor(bw / 2);
+        g.fillStyle = '#1b1452';
+        g.fillRect(ax, top - 6, 1, 6);
+        g.fillStyle = '#ff5c8a';
+        g.fillRect(ax, top - 7, 1, 1);
+      }
+      for (let wy = top + 3; wy < h - 3; wy += 4) {
+        for (let wx = x + 2; wx < x + bw - 2; wx += 4) {
+          const r = rnd();
+          if (r < 0.2) { g.fillStyle = LIT[Math.floor(rnd() * LIT.length)]; g.fillRect(wx, wy, 2, 2); }
+          else if (r < 0.45) { g.fillStyle = '#2a2178'; g.fillRect(wx, wy, 2, 2); }
+        }
+      }
+      x += bw + 1;
+    }
+    // земля
+    g.fillStyle = '#120c3a';
+    g.fillRect(0, h - 3, w, 3);
+    g.fillStyle = '#a78bfa';
+    g.fillRect(0, h - 4, w, 1);
+  }
+  const skylines = [...document.querySelectorAll('.skyline')];
 
   /* ------------------------------------------------------------------
    * Портрет в блоке «Обо мне»
    * ------------------------------------------------------------------ */
   const portrait = document.getElementById('portrait');
-  const portraitCtx = portrait && portrait.getContext('2d');
+  portrait.width = SW;
+  portrait.height = SH;
+  const portraitCtx = portrait.getContext('2d');
   let portraitFrame = '';
   function drawPortrait(name) {
-    if (!portraitCtx || portraitFrame === name) return;
+    if (portraitFrame === name) return;
     portraitFrame = name;
     portraitCtx.clearRect(0, 0, SW, SH);
     portraitCtx.drawImage(sprites[name], 0, 0);
   }
 
   /* ------------------------------------------------------------------
-   * Сцена главного экрана: комната, стол, монитор
+   * Сцена главного экрана: стол, монитор, стул, растение
    * ------------------------------------------------------------------ */
-  const SCENE_W = 80;
-  const SCENE_H = 56;
-  const FLOOR_Y = 48;  // ноги персонажа
-  const SEAT_X = 40;   // центр персонажа на стуле
+  const SCENE_W = 160;
+  const SCENE_H = 112;
+  const FLOOR_Y = 100; // ноги персонажа
+  const SEAT_X = 80;   // центр персонажа на стуле
 
   const sceneWrap = document.getElementById('scene');
   const stage = document.getElementById('stage');
@@ -72,126 +127,160 @@
   back.height = front.height = SCENE_H;
   const bctx = back.getContext('2d');
   const fctx = front.getContext('2d');
-  let ps = 6; // размер «пикселя» сцены в CSS-пикселях
+  let ps = 3; // размер «пикселя» сцены в CSS-пикселях
 
-  function layoutScene() {
+  function layout() {
     const avail = Math.min(sceneWrap.clientWidth, 640);
-    ps = Math.max(3, Math.floor(avail / SCENE_W));
+    ps = Math.max(2, Math.floor(avail / SCENE_W));
     stage.style.width = SCENE_W * ps + 'px';
     stage.style.height = SCENE_H * ps + 'px';
     stage.style.setProperty('--ps', ps + 'px');
+    skylines.forEach(drawSkyline);
   }
 
-  const rect = (g, color, x, y, w = 1, h = 1) => { g.fillStyle = color; g.fillRect(x, y, w, h); };
-  const OUT = '#14102a';
+  const rect = (g, c, x, y, w = 1, h = 1) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+  function rrect(g, c, x, y, w, h, r) {
+    g.fillStyle = c;
+    for (let j = 0; j < h; j++) {
+      const inset = j < r ? r - j : j >= h - r ? r - (h - 1 - j) : 0;
+      g.fillRect(x + inset, y + j, w - inset * 2, 1);
+    }
+  }
+  function blob(g, c, cx, cy, rx, ry) {
+    g.fillStyle = c;
+    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) {
+      for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+        const dx = (x + 0.5 - cx) / rx;
+        const dy = (y + 0.5 - cy) / ry;
+        if (dx * dx + dy * dy <= 1) g.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+  function line(g, c, x0, y0, x1, y1, t = 1) {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    g.fillStyle = c;
+    for (let i = 0; i <= n; i++) {
+      const x = Math.round(x0 + ((x1 - x0) * i) / n);
+      const y = Math.round(y0 + ((y1 - y0) * i) / n);
+      g.fillRect(x, y, t, t);
+    }
+  }
 
-  // Мини-сайт на мониторе собирается по шагам, пока персонаж печатает
+  // Мини-сайт в редакторе на мониторе собирается по шагам
   const SCREEN_STEPS = 6;
   let screenStep = 0;
-  function drawScreen(g, ox, oy, step) {
-    rect(g, '#f4f1ff', ox, oy, 15, 12);
-    if (step >= 1) { rect(g, '#1a1226', ox, oy, 15, 1); rect(g, '#ffd21f', ox + 1, oy, 2, 1); rect(g, '#8f88c9', ox + 10, oy, 1, 1); rect(g, '#8f88c9', ox + 12, oy, 1, 1); }
-    if (step >= 2) { rect(g, '#2f6bff', ox + 1, oy + 2, 7, 1); rect(g, '#2f6bff', ox + 1, oy + 4, 5, 1); }
-    if (step >= 3) { rect(g, '#ffd21f', ox + 1, oy + 6, 4, 1); rect(g, '#1a1226', ox + 1, oy + 7, 4, 1); }
-    if (step >= 4) { rect(g, '#ff5c8a', ox + 9, oy + 2, 5, 5); rect(g, '#ffe28a', ox + 10, oy + 3, 1, 1); rect(g, '#c23a63', ox + 9, oy + 6, 5, 1); }
-    if (step >= 5) { for (let i = 0; i < 3; i++) rect(g, '#c7c0f0', ox + 1 + i * 5, oy + 9, 3, 2); }
-    if (step >= 6) { rect(g, '#1a1226', ox, oy + 11, 15, 1); }
+  function drawScreen(g, ox, oy, step, now) {
+    rect(g, '#1e1b2e', ox, oy, 36, 25);
+    rect(g, '#2b2840', ox, oy, 36, 2);
+    rect(g, '#ff5f57', ox + 1, oy, 1, 1); rect(g, '#febc2e', ox + 3, oy, 1, 1); rect(g, '#28c840', ox + 5, oy, 1, 1);
+    rect(g, '#26233a', ox, oy + 2, 7, 23);
+    for (let i = 0; i < 5; i++) rect(g, i === step % 5 ? '#a78bfa' : '#4a4670', ox + 1, oy + 4 + i * 3, 4, 1);
+    rect(g, '#26233a', ox + 30, oy + 2, 6, 23);
+    ['#8b5cf6', '#ff5cd6', '#ffc93c', '#1f5fe0'].forEach((c, i) => rect(g, c, ox + 31, oy + 4 + i * 3, 3, 2));
+    // артборд
+    const ax = ox + 10;
+    const ay = oy + 4;
+    rect(g, '#f6f3ff', ax, ay, 17, 19);
+    if (step >= 1) { rect(g, '#1e1b2e', ax, ay, 17, 2); rect(g, '#ffc93c', ax + 1, ay, 3, 1); }
+    if (step >= 2) { rect(g, '#7c3aed', ax + 1, ay + 4, 8, 1); rect(g, '#7c3aed', ax + 1, ay + 6, 6, 1); }
+    if (step >= 3) { rect(g, '#ff5cd6', ax + 1, ay + 9, 5, 2); }
+    if (step >= 4) { rect(g, '#1f5fe0', ax + 10, ay + 4, 6, 7); rect(g, '#6ee7ff', ax + 11, ay + 5, 2, 2); }
+    if (step >= 5) { for (let i = 0; i < 3; i++) rect(g, '#c4b5fd', ax + 1 + i * 5, ay + 13, 4, 3); }
+    if (step >= 6) { rect(g, '#1e1b2e', ax, ay + 17, 17, 2); }
+    // курсор-выделение
+    if (step > 0 && Math.floor(now / 450) % 2) {
+      g.strokeStyle = '#00b3ff';
+      g.lineWidth = 1;
+      g.strokeRect(ax + 0.5, ay + 0.5, 16, 18);
+    }
   }
 
   function drawBack(now) {
     const g = bctx;
     g.clearRect(0, 0, SCENE_W, SCENE_H);
 
-    // стена
-    rect(g, '#231d4d', 0, 0, 80, 46);
-    for (let x = 0; x < 80; x += 8) rect(g, '#272157', x, 0, 4, 46);
-    rect(g, '#15112f', 0, 46, 80, 2);
+    // пол-крыша
+    rrect(g, OUT, 2, 99, 156, 13, 2);
+    rect(g, '#6b58d6', 4, 100, 152, 1);
+    rect(g, '#3f3199', 3, 101, 154, 5);
+    for (let x = 12; x < 156; x += 14) rect(g, '#33278a', x, 101, 1, 5);
+    rect(g, '#281e72', 3, 106, 154, 4);
+    rect(g, '#1d1558', 4, 110, 152, 1);
 
-    // пол
-    rect(g, '#3b2a55', 0, 48, 80, 8);
-    for (let y = 48; y < 56; y += 2) {
-      for (let x = ((y / 2) % 2) * 4; x < 80; x += 8) rect(g, '#33244b', x, y, 4, 2);
-    }
+    // перекладина стола (сзади)
+    rect(g, OUT, 22, 90, 116, 3);
+    rect(g, '#b8641f', 22, 91, 116, 1);
 
-    // окно с ночным небом
-    rect(g, '#3d347a', 3, 3, 21, 17);
-    rect(g, '#0d1033', 4, 4, 19, 15);
-    [[6, 6], [11, 9], [20, 6], [8, 15], [16, 13], [21, 16], [6, 11], [18, 10]].forEach(([x, y], i) => {
-      const on = Math.sin(now / 420 + i * 1.9) > -0.2;
-      rect(g, on ? '#ffffff' : '#5c63b8', x, y);
-    });
-    rect(g, '#ffe9a8', 15, 6, 3, 3);
-    rect(g, '#0d1033', 17, 6, 1, 1);
-    rect(g, '#3d347a', 13, 4, 1, 15);
-    rect(g, '#3d347a', 4, 11, 19, 1);
-    rect(g, '#4b418f', 2, 20, 23, 1);
-
-    // постер с сердечком
-    rect(g, '#ffd21f', 56, 4, 15, 13);
-    rect(g, '#1a1226', 57, 5, 13, 11);
-    ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...'].forEach((row, y) => {
-      for (let x = 0; x < row.length; x++) if (row[x] === 'X') rect(g, '#ff5c8a', 60 + x, 7 + y);
-    });
-
-    // полка с книгами и растением
-    rect(g, '#6b4429', 54, 26, 20, 1);
-    rect(g, '#3e2616', 54, 27, 20, 1);
-    [['#2f6bff', 55, 3], ['#ff5c8a', 57, 4], ['#ffd21f', 59, 2], ['#3ee07a', 61, 4], ['#a487ff', 63, 3]].forEach(([c, x, hgt]) => {
-      rect(g, OUT, x, 26 - hgt - 2, 2, hgt + 2);
-      rect(g, c, x, 26 - hgt - 1, 1, hgt + 1);
-    });
-    rect(g, '#c4643a', 68, 22, 4, 4);
-    rect(g, '#3ee07a', 67, 19, 2, 3); rect(g, '#3ee07a', 70, 18, 2, 4); rect(g, '#26b864', 69, 20, 1, 2);
+    // растение в горшке
+    const leaf = (cx, cy, rx, ry, c, hl) => {
+      blob(g, OUT, cx, cy, rx + 1, ry + 1);
+      blob(g, c, cx, cy, rx, ry);
+      blob(g, hl, cx - rx * 0.35, cy - ry * 0.3, rx * 0.35, ry * 0.45);
+    };
+    leaf(139, 70, 5, 10, '#2fbf68', '#6ee79a');
+    leaf(151, 66, 5, 11, '#24a356', '#4fd283');
+    leaf(145, 57, 4, 9, '#2fbf68', '#6ee79a');
+    leaf(133, 78, 6, 4, '#24a356', '#4fd283');
+    leaf(155, 78, 4, 4, '#2fbf68', '#6ee79a');
+    rect(g, OUT, 131, 81, 26, 5);
+    rect(g, '#e07a4c', 132, 82, 24, 3);
+    rect(g, OUT, 133, 86, 22, 13);
+    rect(g, '#c4643a', 134, 86, 20, 12);
+    rect(g, '#9a4826', 150, 86, 4, 12);
+    rect(g, '#d97a4f', 135, 86, 2, 12);
 
     // стул (за персонажем)
-    // спинка со скруглённым верхом
-    rect(g, OUT, 33, 23, 14, 13);
-    rect(g, OUT, 32, 25, 16, 11);
-    rect(g, '#ff5c8a', 34, 24, 12, 11);
-    rect(g, '#ff5c8a', 33, 26, 14, 9);
-    rect(g, '#ff8aac', 34, 24, 12, 1);
-    rect(g, '#d43f6c', 33, 33, 14, 2);
-    // строчка на спинке
-    rect(g, '#d43f6c', 36, 27, 8, 1);
-    rect(g, '#d43f6c', 36, 30, 8, 1);
-    // ножка спинки и сиденье
-    rect(g, OUT, 39, 36, 2, 2);
-    rect(g, OUT, 31, 38, 18, 1);
-    rect(g, '#2a2540', 39, 42, 2, 4);
-    rect(g, '#2a2540', 33, 46, 14, 1);
-    rect(g, '#0b0916', 33, 47, 2, 1); rect(g, '#0b0916', 39, 47, 2, 1); rect(g, '#0b0916', 45, 47, 2, 1);
+    rrect(g, OUT, 63, 44, 34, 33, 4);
+    rrect(g, '#4a3f8f', 64, 45, 32, 31, 3);
+    rect(g, '#6a5fb5', 67, 46, 26, 1);
+    for (let y = 53; y < 74; y += 7) rect(g, '#3a3078', 68, y, 24, 1);
+    rect(g, OUT, 78, 79, 5, 13);
+    rect(g, '#3a3360', 79, 79, 3, 13);
+    rect(g, OUT, 64, 92, 33, 3);
+    rect(g, '#3a3360', 65, 93, 31, 1);
+    [64, 78, 93].forEach((x) => { rect(g, OUT, x, 95, 4, 4); rect(g, '#5a5480', x + 1, 96, 2, 2); });
 
     // монитор
-    rect(g, OUT, 12, 21, 17, 14);
-    drawScreen(g, 13, 22, screenStep);
-    rect(g, OUT, 19, 35, 3, 3);
-    rect(g, OUT, 16, 38, 9, 1);
+    rrect(g, OUT, 16, 36, 42, 32, 2);
+    rrect(g, '#2c2f48', 17, 37, 40, 30, 1);
+    drawScreen(g, 19, 39, screenStep, now);
+    rect(g, OUT, 33, 68, 8, 3);
+    rect(g, '#2c2f48', 34, 68, 6, 3);
+    rect(g, OUT, 27, 71, 20, 2);
+    rect(g, '#4a4e70', 28, 71, 18, 1);
+    // стикеры
+    rect(g, OUT, 54, 38, 6, 6); rect(g, '#ffc93c', 55, 39, 4, 4);
+    rect(g, OUT, 55, 45, 6, 6); rect(g, '#ff7ad9', 56, 46, 4, 4);
 
     // клавиатура
-    rect(g, OUT, 31, 37, 18, 2);
-    rect(g, '#c9cbe0', 32, 37, 16, 1);
-    for (let x = 33; x < 47; x += 2) rect(g, '#8f92b0', x, 37);
+    rrect(g, OUT, 63, 68, 35, 5, 1);
+    rect(g, '#d6d3ec', 64, 69, 33, 3);
+    for (let x = 65; x < 96; x += 2) { rect(g, '#9a96c0', x, 69); rect(g, '#9a96c0', x + 1, 71); }
 
     // кружка с паром
-    rect(g, OUT, 54, 33, 6, 6);
-    rect(g, '#ffd21f', 55, 34, 4, 4);
-    rect(g, '#e0a800', 55, 37, 4, 1);
-    rect(g, OUT, 60, 34, 2, 3);
-    for (let i = 0; i < 3; i++) {
-      const p = ((now / 900) + i / 3) % 1;
+    rrect(g, OUT, 104, 62, 10, 11, 1);
+    rect(g, '#ece8ff', 105, 63, 8, 9);
+    rect(g, '#b9b3e6', 111, 63, 2, 9);
+    rect(g, '#8b5cf6', 105, 66, 8, 2);
+    rect(g, OUT, 114, 64, 3, 1); rect(g, OUT, 116, 64, 1, 5); rect(g, OUT, 114, 68, 3, 1);
+    for (let i = 0; i < 4; i++) {
+      const p = ((now / 1100) + i / 4) % 1;
       g.globalAlpha = 1 - p;
-      rect(g, '#ffffff', 56 + Math.round(Math.sin(p * 6 + i * 2)), Math.round(32 - p * 7));
+      rect(g, '#ffffff', 107 + Math.round(Math.sin(p * 6 + i * 2) * 1.5) + (i % 2) * 3, Math.round(60 - p * 10));
       g.globalAlpha = 1;
     }
 
     // лампа
-    rect(g, OUT, 63, 37, 6, 2);
-    rect(g, OUT, 65, 30, 1, 7);
-    rect(g, OUT, 62, 28, 7, 3);
-    rect(g, '#ffd21f', 63, 29, 5, 1);
-    g.globalAlpha = 0.12;
-    g.fillStyle = '#ffd21f';
-    g.beginPath(); g.moveTo(62, 31); g.lineTo(69, 31); g.lineTo(73, 39); g.lineTo(58, 39); g.fill();
+    rrect(g, OUT, 120, 69, 13, 4, 1);
+    rect(g, '#ffb84d', 121, 70, 11, 2);
+    line(g, OUT, 126, 69, 121, 56, 2);
+    line(g, OUT, 121, 56, 130, 50, 2);
+    rrect(g, OUT, 128, 46, 12, 7, 2);
+    rect(g, '#ffb84d', 130, 47, 8, 4);
+    rect(g, '#fff3b0', 131, 52, 6, 1);
+    g.globalAlpha = 0.14;
+    g.fillStyle = '#ffd36b';
+    g.beginPath(); g.moveTo(129, 53); g.lineTo(139, 53); g.lineTo(146, 73); g.lineTo(116, 73); g.fill();
     g.globalAlpha = 1;
   }
 
@@ -199,24 +288,29 @@
     const g = fctx;
     g.clearRect(0, 0, SCENE_W, SCENE_H);
     // столешница перед персонажем
-    rect(g, OUT, 9, 39, 62, 4);
-    rect(g, '#b07a4c', 10, 39, 60, 1);
-    rect(g, '#8a5a35', 10, 40, 60, 2);
+    rect(g, OUT, 10, 73, 140, 6);
+    rect(g, '#ffb46b', 11, 74, 138, 1);
+    rect(g, '#e8893a', 11, 75, 138, 2);
+    rect(g, '#b8641f', 11, 77, 138, 1);
     // ножки
-    rect(g, OUT, 11, 43, 4, 5);
-    rect(g, '#6b4429', 12, 43, 2, 5);
-    rect(g, OUT, 65, 43, 4, 5);
-    rect(g, '#6b4429', 66, 43, 2, 5);
-    // тумба с ящиком
-    rect(g, OUT, 50, 43, 15, 5);
-    rect(g, '#7a4c2c', 51, 43, 13, 4);
-    rect(g, '#ffd21f', 56, 44, 3, 1);
+    for (const x of [16, 138]) {
+      rect(g, OUT, x, 79, 6, 21);
+      rect(g, '#e8893a', x + 1, 79, 4, 20);
+      rect(g, '#ffb46b', x + 1, 79, 1, 20);
+      rect(g, '#b8641f', x + 4, 79, 1, 20);
+    }
+    // тумба
+    rect(g, OUT, 108, 79, 27, 13);
+    rect(g, '#d97b2e', 109, 79, 25, 12);
+    rect(g, '#b8641f', 109, 85, 25, 1);
+    rect(g, OUT, 118, 81, 7, 2);
+    rect(g, OUT, 118, 87, 7, 2);
   }
 
   /* ------------------------------------------------------------------
    * Пузырь с текстом, который «печатает» персонаж
    * ------------------------------------------------------------------ */
-  const LINES = ['header: готов', 'сетка 12 колонок', 'заголовок 48/56', 'кнопку поярче!', 'адаптив: ок', 'wow-эффект: ок'];
+  const LINES = ['собираю прототип', 'сетка 12 колонок', 'Zero Block: готово', 'кнопку поярче!', 'адаптив: ок', 'ЮKassa подключена'];
   const typedEl = document.getElementById('typed');
   const typing = { line: 0, char: 0, mode: 'type', next: 0 };
 
@@ -231,7 +325,7 @@
         typing.next = now + 1100;
         screenStep = Math.min(SCREEN_STEPS, screenStep + 1);
       } else {
-        typing.next = now + 55 + Math.random() * 80;
+        typing.next = now + 50 + Math.random() * 80;
       }
     } else if (typing.mode === 'hold') {
       typing.mode = 'erase';
@@ -245,7 +339,7 @@
         if (typing.line === 0) screenStep = 0;
         typing.next = now + 300;
       } else {
-        typing.next = now + 20;
+        typing.next = now + 18;
       }
     }
   }
@@ -261,14 +355,14 @@
     final: el.hasAttribute('data-final'),
   }));
 
-  const smallScale = () => (innerWidth < 680 ? 2 : 3);
+  const smallScale = () => (innerWidth < 680 ? 1 : 1.5);
   const hudHeight = () => (innerWidth <= 680 ? 56 : 64);
 
   function platformPos(p, s) {
     const r = p.el.getBoundingClientRect();
-    const half = (SW / 2) * s + 8;
+    const half = (SW / 2) * s + 6;
     let lx = r.width * p.frac;
-    lx = Math.max(half, Math.min(r.width - half, lx));
+    lx = Math.max(Math.min(half, r.width / 2), Math.min(r.width - half, lx));
     let x = r.left + lx;
     x = Math.max(half, Math.min(document.documentElement.clientWidth - half, x));
     return { x: x + scrollX, y: r.top + scrollY - p.offset };
@@ -292,7 +386,7 @@
     const vh = innerHeight;
     const s = smallScale();
     const line = vh * 0.6;
-    let minTop = hudHeight() + SH * s * 0.6;
+    let minTop = hudHeight() + SH * s * 0.55;
     const maxTop = vh - 12;
     const curX = P.x - scrollX;
 
@@ -304,32 +398,32 @@
       const pos = platformPos(p, s);
       return Math.abs(top - line) + Math.abs(pos.x - scrollX - curX) * 0.03;
     };
+    const pick = () => {
+      let best = null;
+      let bestScore = Infinity;
+      for (const p of platforms) {
+        const sc = score(p);
+        if (sc < bestScore) { bestScore = sc; best = p; }
+      }
+      return [best, bestScore];
+    };
 
-    let best = null;
-    let bestScore = Infinity;
-    for (const p of platforms) {
-      const sc = score(p);
-      if (sc < bestScore) { bestScore = sc; best = p; }
-    }
+    let [best, bestScore] = pick();
     // гистерезис, чтобы персонаж не дёргался между соседними платформами
-    if (current && best !== current) {
+    if (best && current && best !== current) {
       const cs = score(current);
       if (cs !== Infinity && cs - bestScore < 60) return current;
     }
     if (best) return best;
 
-    // нет платформ в удобной зоне — пробуем любую видимую под шапкой
+    // нет платформ в удобной зоне — любая видимая под шапкой
     minTop = hudHeight() + 8;
-    for (const p of platforms) {
-      const sc = score(p);
-      if (sc < bestScore) { bestScore = sc; best = p; }
-    }
+    [best] = pick();
     if (best) return best;
 
-    // совсем ничего не видно — берём ближайшую к линии
+    // совсем ничего не видно — ближайшая к линии
     for (const p of platforms) {
-      const r = p.el.getBoundingClientRect();
-      const sc = Math.abs(r.top - line);
+      const sc = Math.abs(p.el.getBoundingClientRect().top - line);
       if (sc < bestScore) { bestScore = sc; best = p; }
     }
     return best;
@@ -339,9 +433,13 @@
    * Персонаж
    * ------------------------------------------------------------------ */
   const playerEl = document.getElementById('player');
+  playerEl.width = SW;
+  playerEl.height = SH;
+  playerEl.style.width = SW + 'px';
+  playerEl.style.height = SH + 'px';
   const pctx = playerEl.getContext('2d');
   const P = {
-    x: 0, y: 0, s: 6, z: 5,
+    x: 0, y: 0, s: 3, z: 5,
     state: 'sit',     // sit | standup | jump | roam | sitdown
     sprite: '',
     jump: null,
@@ -424,9 +522,7 @@
   }
 
   function idleSprite(now) {
-    if (P.plat && P.plat.final) {
-      return Math.floor(now / 350) % 2 ? 'wave' : 'stand';
-    }
+    if (P.plat && P.plat.final) return Math.floor(now / 300) % 2 ? 'wave' : 'wave2';
     return (now % 3400) < 140 ? 'blink' : 'stand';
   }
 
@@ -519,8 +615,8 @@
     // приземление: сплющивание
     P.squash = Math.max(0, P.squash - dt / 170);
     const q = P.squash;
-    const sx = P.s * (1 + 0.2 * q);
-    const sy = P.s * (1 - 0.2 * q);
+    const sx = P.s * (1 + 0.16 * q);
+    const sy = P.s * (1 - 0.16 * q);
     const tx = Math.round(P.x - (SW * sx) / 2);
     const ty = Math.round(P.y - SH * sy);
     playerEl.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
@@ -530,7 +626,7 @@
   }
 
   /* ------------------------------------------------------------------
-   * Появление блоков и шкал навыков
+   * Появление блоков
    * ------------------------------------------------------------------ */
   const io = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
@@ -540,15 +636,19 @@
       }
     });
   }, { rootMargin: '0px 0px -8% 0px' });
-  document.querySelectorAll('.reveal, .skills').forEach((el) => io.observe(el));
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 
   /* ------------------------------------------------------------------
    * Старт
    * ------------------------------------------------------------------ */
-  layoutScene();
+  layout();
   drawFront();
   drawBack(performance.now());
-  addEventListener('resize', layoutScene);
+  let resizeTimer = 0;
+  addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(layout, 120);
+  });
 
   // если страница открылась не с самого верха — сразу ставим персонажа на платформу
   requestAnimationFrame(() => {
