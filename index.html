@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Имя Фамилия — веб-дизайнер</title>
+  <meta name="description" content="Портфолио веб-дизайнера: лендинги, корпоративные сайты, интерфейсы.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- HUD / навигация -->
+  <header class="hud">
+    <a class="hud__logo" href="#start"><span class="ico ico--star" data-icon="star"></span>Имя Фамилия</a>
+    <nav class="hud__nav" aria-label="Навигация">
+      <a href="#works">Работы</a>
+      <a href="#about">Обо мне</a>
+      <a href="#contact">Контакты</a>
+    </nav>
+    <div class="hud__stats">
+      <span class="hud__hearts" aria-hidden="true">
+        <span class="ico" data-icon="heart"></span><span class="ico" data-icon="heart"></span><span class="ico" data-icon="heart"></span>
+      </span>
+      <span class="hud__score">SCORE <b id="score">000000</b></span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. Главный экран -->
+    <section class="hero" id="start">
+      <div class="container hero__grid">
+        <div class="hero__text">
+          <p class="eyebrow">PLAYER 1 · ВЕБ-ДИЗАЙНЕР</p>
+          <h1 class="hero__title">Делаю сайты, которые хочется пройти <span class="hl">до&nbsp;конца</span></h1>
+          <p class="hero__lead">Привет! Я Имя Фамилия. Проектирую лендинги, корпоративные сайты и&nbsp;интерфейсы — от&nbsp;структуры и&nbsp;прототипа до&nbsp;адаптивного макета, готового к&nbsp;вёрстке.</p>
+          <div class="hero__actions" data-platform data-x="0.3">
+            <a class="btn btn--yellow" href="#works"><span class="ico" data-icon="play"></span>Смотреть работы</a>
+            <a class="btn btn--ghost" href="#contact">Связаться</a>
+          </div>
+        </div>
+
+        <div class="hero__scene" id="scene">
+          <div class="stage" id="stage">
+            <div class="bubble" id="bubble"><span id="typed"></span><i class="caret"></i></div>
+            <canvas id="sceneBack" aria-hidden="true"></canvas>
+            <canvas id="sceneFront" aria-hidden="true"></canvas>
+          </div>
+        </div>
+      </div>
+      <a class="press-start" href="#works">
+        <span class="ico" data-icon="down"></span> Листай вниз, чтобы начать <span class="ico" data-icon="down"></span>
+      </a>
+      <div class="ground" data-platform data-x="0.85"></div>
+    </section>
+
+    <!-- 2. Работы -->
+    <section class="section" id="works">
+      <div class="container">
+        <header class="level-head reveal" data-platform data-x="0.2">
+          <span class="level-head__no">LEVEL 1</span>
+          <h2>Работы</h2>
+        </header>
+        <p class="section-lead reveal">Избранные проекты: лендинги, интернет-магазины, корпоративные сайты и&nbsp;сервисы. Скоро здесь появятся кейсы.</p>
+
+        <div class="works-grid">
+          <article class="work reveal" data-platform data-x="0.25">
+            <div class="work__img" style="--c1:#2f6bff;--c2:#5a93ff"><span class="ico ico--img" data-icon="image"></span><span class="work__soon">СКОРО</span></div>
+            <div class="work__body"><span class="work__no">01</span><h3>Название проекта</h3><p>Лендинг · UI/UX · Адаптив</p></div>
+          </article>
+          <article class="work reveal" data-platform data-x="0.7">
+            <div class="work__img" style="--c1:#ff5c8a;--c2:#ff8aac"><span class="ico ico--img" data-icon="image"></span><span class="work__soon">СКОРО</span></div>
+            <div class="work__body"><span class="work__no">02</span><h3>Название проекта</h3><p>Интернет-магазин · UI-кит</p></div>
+          </article>
+          <article class="work reveal" data-platform data-x="0.4">
+            <div class="work__img" style="--c1:#26b864;--c2:#3ee07a"><span class="ico ico--img" data-icon="image"></span><span class="work__soon">СКОРО</span></div>
+            <div class="work__body"><span class="work__no">03</span><h3>Название проекта</h3><p>Корпоративный сайт · Дизайн-система</p></div>
+          </article>
+          <article class="work reveal" data-platform data-x="0.8">
+            <div class="work__img" style="--c1:#e0a800;--c2:#ffd21f"><span class="ico ico--img" data-icon="image"></span><span class="work__soon">СКОРО</span></div>
+            <div class="work__body"><span class="work__no">04</span><h3>Название проекта</h3><p>Сервис · Личный кабинет</p></div>
+          </article>
+          <article class="work reveal" data-platform data-x="0.2">
+            <div class="work__img" style="--c1:#7a4cff;--c2:#a487ff"><span class="ico ico--img" data-icon="image"></span><span class="work__soon">СКОРО</span></div>
+            <div class="work__body"><span class="work__no">05</span><h3>Название проекта</h3><p>Промо-сайт · Анимация</p></div>
+          </article>
+          <article class="work reveal" data-platform data-x="0.6">
+            <div class="work__img" style="--c1:#ff7a3d;--c2:#ffa173"><span class="ico ico--img" data-icon="image"></span><span class="work__soon">СКОРО</span></div>
+            <div class="work__body"><span class="work__no">06</span><h3>Название проекта</h3><p>Редизайн · Мобильная версия</p></div>
+          </article>
+        </div>
+      </div>
+      <div class="ground" data-platform data-x="0.15"></div>
+    </section>
+
+    <!-- 3. Обо мне -->
+    <section class="section" id="about">
+      <div class="container">
+        <header class="level-head reveal" data-platform data-x="0.75">
+          <span class="level-head__no">LEVEL 2</span>
+          <h2>Обо мне</h2>
+        </header>
+
+        <div class="about-grid">
+          <aside class="panel char reveal" data-platform data-x="0.7">
+            <div class="char__portrait"><canvas id="portrait" width="20" height="32" aria-label="Пиксельный портрет"></canvas></div>
+            <dl class="char__stats">
+              <div><dt>Класс</dt><dd>Веб-дизайнер</dd></div>
+              <div><dt>Опыт</dt><dd>5+ лет</dd></div>
+              <div><dt>Проектов</dt><dd>60+</dd></div>
+              <div><dt>Формат</dt><dd>Удалённо</dd></div>
+              <div><dt>Статус</dt><dd class="online">Открыт к проектам</dd></div>
+            </dl>
+          </aside>
+
+          <div class="panel about-text reveal" data-platform data-x="0.3">
+            <h3 class="panel__title">Кто я</h3>
+            <p>Я веб-дизайнер. Помогаю бизнесу и&nbsp;экспертам упаковать продукт в&nbsp;понятный и&nbsp;красивый сайт: разбираюсь в&nbsp;задаче, продумываю структуру и&nbsp;путь пользователя, а&nbsp;потом собираю визуал, который работает на&nbsp;заявки и&nbsp;продажи.</p>
+            <p>Люблю чистые сетки, смелую типографику и&nbsp;детали, которые делают сайт живым: микроанимации, продуманные состояния, адаптив без компромиссов.</p>
+          </div>
+        </div>
+
+        <div class="panel skills reveal" data-platform data-x="0.55">
+          <h3 class="panel__title">Навыки</h3>
+          <ul class="skills__list">
+            <li class="skill" data-platform><div class="skill__top"><span>UX/UI-дизайн</span><b>LV 9</b></div><div class="bar"><i style="--v:92%"></i></div></li>
+            <li class="skill" data-platform><div class="skill__top"><span>Лендинги и промо-сайты</span><b>LV 10</b></div><div class="bar"><i style="--v:96%"></i></div></li>
+            <li class="skill" data-platform><div class="skill__top"><span>Адаптив: desktop / tablet / mobile</span><b>LV 9</b></div><div class="bar"><i style="--v:90%"></i></div></li>
+            <li class="skill" data-platform><div class="skill__top"><span>Типографика и композиция</span><b>LV 9</b></div><div class="bar"><i style="--v:88%"></i></div></li>
+            <li class="skill" data-platform><div class="skill__top"><span>Прототипирование и структура</span><b>LV 8</b></div><div class="bar"><i style="--v:84%"></i></div></li>
+            <li class="skill" data-platform><div class="skill__top"><span>Дизайн-системы и UI-киты</span><b>LV 8</b></div><div class="bar"><i style="--v:82%"></i></div></li>
+            <li class="skill" data-platform><div class="skill__top"><span>Анимация и интерактив</span><b>LV 7</b></div><div class="bar"><i style="--v:74%"></i></div></li>
+            <li class="skill" data-platform><div class="skill__top"><span>Сборка на Tilda / no-code</span><b>LV 8</b></div><div class="bar"><i style="--v:80%"></i></div></li>
+          </ul>
+        </div>
+
+        <div class="two-col">
+          <div class="panel reveal" data-platform data-x="0.3">
+            <h3 class="panel__title">Инвентарь</h3>
+            <ul class="inventory">
+              <li>Figma</li><li>Photoshop</li><li>Illustrator</li><li>After Effects</li>
+              <li>Tilda</li><li>Webflow</li><li>Readymag</li><li>Miro</li>
+              <li>Notion</li><li>Нейросети</li>
+            </ul>
+          </div>
+          <div class="panel reveal" data-platform data-x="0.7">
+            <h3 class="panel__title">Суперспособности</h3>
+            <ul class="perks">
+              <li><span class="ico" data-icon="check"></span>Думаю как пользователь — и&nbsp;как владелец бизнеса</li>
+              <li><span class="ico" data-icon="check"></span>Объясняю дизайн-решения простыми словами</li>
+              <li><span class="ico" data-icon="check"></span>Готовлю макеты, которые удобно верстать</li>
+              <li><span class="ico" data-icon="check"></span>Соблюдаю сроки и&nbsp;держу в&nbsp;курсе</li>
+              <li><span class="ico" data-icon="check"></span>Помогаю на&nbsp;запуске, а&nbsp;не&nbsp;пропадаю после сдачи</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="quest-title reveal">Квест: как мы будем работать</h3>
+        <ol class="quest">
+          <li class="quest__step reveal" data-platform data-x="0.5"><span class="quest__no">1</span><h4>Бриф</h4><p>Обсуждаем задачу, аудиторию и&nbsp;цели сайта.</p></li>
+          <li class="quest__step reveal" data-platform data-x="0.5"><span class="quest__no">2</span><h4>Прототип</h4><p>Собираем структуру и&nbsp;логику страниц.</p></li>
+          <li class="quest__step reveal" data-platform data-x="0.5"><span class="quest__no">3</span><h4>Дизайн</h4><p>Визуальная концепция, все экраны и&nbsp;адаптив.</p></li>
+          <li class="quest__step reveal" data-platform data-x="0.5"><span class="quest__no">4</span><h4>Запуск</h4><p>Передача в&nbsp;вёрстку или сборка, сопровождение.</p></li>
+        </ol>
+      </div>
+      <div class="ground" data-platform data-x="0.8"></div>
+    </section>
+
+    <!-- 4. Контакты -->
+    <section class="section section--final" id="contact">
+      <div class="container">
+        <header class="level-head reveal" data-platform data-x="0.25">
+          <span class="level-head__no">FINAL LEVEL</span>
+          <h2>Контакты</h2>
+        </header>
+
+        <div class="panel contact reveal" data-platform data-x="0.82" data-final>
+          <p class="contact__status"><span class="dot"></span>Свободен для новых проектов</p>
+          <h2 class="contact__title">Готов к&nbsp;сотрудничеству!</h2>
+          <p class="contact__lead">Есть проект или идея? Напишите — обсудим задачу, сроки и&nbsp;стоимость. Отвечаю в&nbsp;течение дня.</p>
+          <div class="socials">
+            <a class="btn btn--social btn--tg" href="https://t.me/username" target="_blank" rel="noopener"><span class="ico ico--soc" data-icon="tg"></span>Telegram</a>
+            <a class="btn btn--social btn--ig" href="https://instagram.com/username" target="_blank" rel="noopener"><span class="ico ico--soc" data-icon="ig"></span>Instagram</a>
+            <a class="btn btn--social btn--vk" href="https://vk.com/username" target="_blank" rel="noopener"><span class="ico ico--soc" data-icon="vk"></span>ВКонтакте</a>
+          </div>
+        </div>
+      </div>
+      <div class="ground ground--last" data-platform data-x="0.5"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 Имя Фамилия · Веб-дизайнер</p>
+    <p class="footer__blink">Спасибо за игру!</p>
+  </footer>
+
+  <!-- Пиксельный персонаж -->
+  <canvas id="player" width="20" height="32" aria-hidden="true"></canvas>
+
+  <script src="js/sprites.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
